@@ -12,8 +12,8 @@ PulseAudioSinksManager::PulseAudioSinksManager(QAudioSwitcher* appWindow):
                           appWindow, SLOT(showError(const QString)));
     QObject::connect(this, SIGNAL(signalAddDevice(const PulseAudioSink)),
                           appWindow, SLOT(addDevice(const PulseAudioSink)));
-
-
+    QObject::connect(this, SIGNAL(signalSinkListComplete()),
+                          appWindow, SLOT(sinkListComplete()));
 }
 
 PulseAudioSinksManager::~PulseAudioSinksManager()
@@ -61,16 +61,16 @@ void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, con
 {
     PulseAudioSinksManager* sinksManager = (PulseAudioSinksManager*)userdata;
     // If eol is set to a positive number, you're at the end of the list
-    if (eol > 0) {
-
-        return;
+    if (eol == 0) {
+        char description[512]={0};
+        char name[512]={0};
+        strncpy(description, info->description, 511);
+        strncpy(name, info->name, 511);
+        PulseAudioSink sink(name,description);
+        sinksManager->signalAddDevice(sink);
+    } else {
+        sinksManager->signalSinkListComplete();
     }
-    char description[512]={0};
-    char name[512]={0};
-    strncpy(description, info->description, 511);
-    strncpy(name, info->name, 511);
-    PulseAudioSink sink(name,description);
-    sinksManager->signalAddDevice(sink);
 }
 
 void PulseAudioSinksManager::retrieveSinksInfo()

@@ -23,8 +23,12 @@ class QAudioSwitcher : public QMainWindow
         void sinkListComplete();
         void sinkSelectionChanged(QListWidgetItem* item);
     private:
+        void saveSinksList();
+        void loadSinksList();
+    private:
         Ui::QAudioSwitcher *ui;
         PulseAudioSinksManager *sinksManager;
+        bool sinkListLoadingComplete;
 };
 
 #endif // QAUDIOSWITCHER_H
