@@ -2,6 +2,8 @@
 #define QAUDIOSWITCHER_H
 
 #include <QMainWindow>
+#include <QSystemTrayIcon>
+#include <QMenu>
 
 #include "pulseaudiosink.h"
 #include "pulseaudiosinklistwidgetitem.h"
@@ -22,13 +24,20 @@ class QAudioSwitcher : public QMainWindow
         void addDevice(const PulseAudioSink sink);
         void sinkListComplete();
         void sinkSelectionChanged(QListWidgetItem* item);
+        void switchSink();
     private:
         void saveSinksList();
         void loadSinksList();
+        void loadDefaultSink();
+        void saveDefaultSink();
+        void setupTrayIcon();
     private:
         Ui::QAudioSwitcher *ui;
         PulseAudioSinksManager *sinksManager;
         bool sinkListLoadingComplete;
+        QString currentDefaultSink;
+        QSystemTrayIcon* trayIcon;
+        QMenu *trayIconMenu;
 };
 
 #endif // QAUDIOSWITCHER_H

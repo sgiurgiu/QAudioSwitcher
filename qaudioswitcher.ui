@@ -95,6 +95,22 @@
     <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
+  <action name="action_Hide">
+   <property name="text">
+    <string>&amp;Hide</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Q</string>
+   </property>
+  </action>
+  <action name="action_Show">
+   <property name="text">
+    <string>&amp;Show</string>
+   </property>
+   <property name="toolTip">
+    <string>Show</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources/>
@@ -112,6 +128,54 @@
     <hint type="destinationlabel">
      <x>304</x>
      <y>167</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_Hide</sender>
+   <signal>activated()</signal>
+   <receiver>QAudioSwitcher</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>143</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_Show</sender>
+   <signal>activated()</signal>
+   <receiver>QAudioSwitcher</receiver>
+   <slot>show()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>143</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>hideButton</sender>
+   <signal>clicked()</signal>
+   <receiver>action_Hide</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>310</x>
+     <y>250</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
     </hint>
    </hints>
   </connection>
