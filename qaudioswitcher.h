@@ -24,7 +24,7 @@ class QAudioSwitcher : public QMainWindow
         void addDevice(const PulseAudioSink sink);
         void sinkListComplete();
         void sinkSelectionChanged(QListWidgetItem* item);
-        void switchSink();
+        Q_SCRIPTABLE void switchSink();
     private:
         void saveSinksList();
         void loadSinksList();

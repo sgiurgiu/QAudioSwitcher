@@ -24,7 +24,7 @@ QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     this->move(QApplication::desktop()->availableGeometry().center() - this->rect().center());
     QDir::home().mkdir(".qaudioswitcher");
     setupTrayIcon();
-    sinksManager->retrieveSinks();
+    sinksManager->retrieveSinks();    
 }
 
 QAudioSwitcher::~QAudioSwitcher()
@@ -166,6 +166,7 @@ void QAudioSwitcher::loadSinksList()
         }
     } else {
         propFile.open(QIODevice::WriteOnly);
+        show();
     }
     propFile.close();
 }

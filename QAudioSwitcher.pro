@@ -21,5 +21,7 @@ HEADERS  += pulseaudiosinksmanager.h qaudioswitcher.h \
 
 FORMS    += qaudioswitcher.ui
 
+CONFIG += qdbus
+
 unix: CONFIG += link_pkgconfig
 unix: PKGCONFIG += libpulse
