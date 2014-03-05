@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
     if (!QDBusConnection::sessionBus().registerService(SERVICE_NAME)) {
         QMessageBox dialog;
-        dialog.critical(NULL,"Error",qPrintable(QDBusConnection::sessionBus().lastError().message()));
+        dialog.critical(NULL,"Error","DBus register error: "+QDBusConnection::sessionBus().lastError().message());
         return 1;
     }
 

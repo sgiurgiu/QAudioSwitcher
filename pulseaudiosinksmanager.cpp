@@ -32,7 +32,7 @@ void PulseAudioSinksManager::retrieveSinks()
     pa_mlapi = pa_threaded_mainloop_get_api(pa_ml);
     pa_ctx = pa_context_new(pa_mlapi, "QAudioSwitcher");
     pa_context_set_state_callback(pa_ctx, PulseAudioSinksManager::pulseAudioStateCallback, this);
-    pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS , NULL);
+    pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFAIL  , NULL);
     pa_threaded_mainloop_start(pa_ml);
 }
 
