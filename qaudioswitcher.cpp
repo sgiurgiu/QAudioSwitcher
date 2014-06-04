@@ -50,13 +50,13 @@ void QAudioSwitcher::setupTrayIcon()
     trayIcon->show();
 }
 
-void QAudioSwitcher::showError(const QString message)
+void QAudioSwitcher::showError(QString message)
 {
     QMessageBox dialog;
     dialog.critical(this,"Error",message);
 }
 
-void QAudioSwitcher::addDevice(const PulseAudioSink sink)
+void QAudioSwitcher::addDevice(PulseAudioSink sink)
 {    
     PulseAudioSinkListWidgetItem* item=new PulseAudioSinkListWidgetItem(sink,ui->listWidget);
     item->setCheckState(Qt::Unchecked);

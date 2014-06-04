@@ -1,12 +1,16 @@
 #ifndef PULSEAUDIOSINKSMANAGER_H
 #define PULSEAUDIOSINKSMANAGER_H
+
 #include <QObject>
+#include <memory>
 #include "pulseaudiosink.h"
+
 class QAudioSwitcher;
 struct pa_context;
 struct pa_threaded_mainloop;
 struct pa_sink_info;
 struct pa_ext_stream_restore_info;
+
 class PulseAudioSinksManager : public QObject
 {
     Q_OBJECT
@@ -17,7 +21,7 @@ class PulseAudioSinksManager : public QObject
         void setDefaultSink(const QString &name);
     signals:
         void signalError(const QString message);
-        void signalAddDevice(const PulseAudioSink sink);
+        void signalAddDevice(PulseAudioSink sink);
         void signalSinkListComplete();
     private:        
         static void pulseAudioStateCallback(pa_context *ctx, void *userdata);
@@ -27,10 +31,10 @@ class PulseAudioSinksManager : public QObject
                                                                  int eol, void *userdata);
     private:
         QAudioSwitcher* appWindow;
-        pa_context *pa_ctx;
-        pa_threaded_mainloop *pa_ml;
         QString defaultDevice;
 
+        std::unique_ptr<pa_threaded_mainloop ,std::function<void(pa_threaded_mainloop*)>> pa_ml;
+        std::unique_ptr<pa_context,std::function<void(pa_context*)>> pa_ctx;
 };
 
 #endif // PULSEAUDIOSINKSMANAGER_H

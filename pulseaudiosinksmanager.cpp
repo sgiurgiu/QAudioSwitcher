@@ -6,38 +6,43 @@
 #include <QObject>
 #include <QDebug>
 
+auto context_deleter = [](pa_context* ctx){
+    pa_context_disconnect(ctx);
+    pa_context_unref(ctx);
+};
+auto loop_deleter = [](pa_threaded_mainloop* loop){
+    pa_threaded_mainloop_free(loop);
+};
+
 PulseAudioSinksManager::PulseAudioSinksManager(QAudioSwitcher* appWindow):
-    appWindow(appWindow)
+    appWindow(appWindow),pa_ml(nullptr,loop_deleter),pa_ctx(nullptr,context_deleter)
 {
     qRegisterMetaType<PulseAudioSink>("PulseAudioSink");
     QObject::connect(this, SIGNAL(signalError(const QString)),
                           appWindow, SLOT(showError(const QString)));
-    QObject::connect(this, SIGNAL(signalAddDevice(const PulseAudioSink)),
-                          appWindow, SLOT(addDevice(const PulseAudioSink)));
+    QObject::connect(this, SIGNAL(signalAddDevice(PulseAudioSink)),
+                          appWindow, SLOT(addDevice(PulseAudioSink)));
     QObject::connect(this, SIGNAL(signalSinkListComplete()),
                           appWindow, SLOT(sinkListComplete()));
 }
 
 PulseAudioSinksManager::~PulseAudioSinksManager()
-{
-    pa_context_disconnect(pa_ctx);
-    pa_context_unref(pa_ctx);
-    pa_threaded_mainloop_free(pa_ml);
+{    
 }
 
 void PulseAudioSinksManager::retrieveSinks()
 {
     pa_mainloop_api *pa_mlapi;
     // Create a mainloop API and connection to the default server
-    pa_ml = pa_threaded_mainloop_new();
-    pa_mlapi = pa_threaded_mainloop_get_api(pa_ml);
-    pa_ctx = pa_context_new(pa_mlapi, "QAudioSwitcher");
-    pa_context_set_state_callback(pa_ctx, PulseAudioSinksManager::pulseAudioStateCallback, this);
-    pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFAIL  , NULL);
-    pa_threaded_mainloop_start(pa_ml);
+    pa_ml.reset(pa_threaded_mainloop_new());
+    pa_mlapi = pa_threaded_mainloop_get_api(pa_ml.get());
+    pa_ctx.reset(pa_context_new(pa_mlapi, "QAudioSwitcher"));
+    pa_context_set_state_callback(pa_ctx.get(), PulseAudioSinksManager::pulseAudioStateCallback, this);
+    pa_context_connect(pa_ctx.get(), NULL, PA_CONTEXT_NOFAIL  , NULL);
+    pa_threaded_mainloop_start(pa_ml.get());
 }
 
-void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_context *c, const pa_ext_stream_restore_info  *info,
+void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_context *ctx, const pa_ext_stream_restore_info  *info,
                                      int eol, void *userdata) {
     pa_ext_stream_restore_info new_info;
     PulseAudioSinksManager* sinksManager = (PulseAudioSinksManager*)userdata;
@@ -50,7 +55,7 @@ void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_con
     std::string device = sinksManager->defaultDevice.toStdString();
     new_info.device = device.c_str();
 
-    PaOperation op(pa_ext_stream_restore_write (sinksManager->pa_ctx,PA_UPDATE_REPLACE,
+    PaOperation op(pa_ext_stream_restore_write (ctx,PA_UPDATE_REPLACE,
                                      &new_info, 1,TRUE, NULL, NULL));
     if (!op) {
             //g_warning ("pa_ext_stream_restore_write() failed: %s",
@@ -69,13 +74,13 @@ void PulseAudioSinksManager::setDefaultSink(const QString& name)
     std::string std_name = defaultDevice.toStdString();
     qDebug() << "setting sink to "<<name<<", and from std_String to  "<<std_name.c_str();
 
-    PaOperation op(pa_context_set_default_sink (pa_ctx,std_name.c_str(),NULL,NULL));
+    PaOperation op(pa_context_set_default_sink (pa_ctx.get(),std_name.c_str(),NULL,NULL));
     if (!op) {
             //g_warning ("pa_context_set_default_sink() failed: %s",
             //         pa_strerror (pa_context_errno (control->priv->pa_context)));
             return;
     }
-    op = pa_ext_stream_restore_read (pa_ctx, PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback,
+    op = pa_ext_stream_restore_read (pa_ctx.get(), PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback,
                                     this);
     if (!op) {
         return;
@@ -123,5 +128,5 @@ void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, con
 void PulseAudioSinksManager::retrieveSinksInfo()
 {
     PaOperation op;
-    op=pa_context_get_sink_info_list(pa_ctx,PulseAudioSinksManager::pulseAudioSinklistCallback,this);
+    op=pa_context_get_sink_info_list(pa_ctx.get(),PulseAudioSinksManager::pulseAudioSinklistCallback,this);
 }

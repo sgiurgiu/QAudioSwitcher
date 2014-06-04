@@ -1,7 +1,7 @@
 #include "paoperation.h"
 #include <pulse/operation.h>
 
-auto deleter = [=](pa_operation* op){
+auto deleter = [](pa_operation* op){
     pa_operation_unref (op);
 };
 
