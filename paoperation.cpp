@@ -1,49 +1,19 @@
 #include "paoperation.h"
-
 #include <pulse/operation.h>
-#include <algorithm>
 
-PaOperation::PaOperation():op(nullptr)
+auto deleter = [=](pa_operation* op){
+    pa_operation_unref (op);
+};
+
+PaOperation::PaOperation():op(nullptr,deleter)
 {
 }
 
-PaOperation::PaOperation(pa_operation *op):op(op)
+PaOperation::PaOperation(pa_operation *op):op(op,deleter)
 {
 }
 
-PaOperation::PaOperation(PaOperation&& other):op(other.op)
+PaOperation::operator bool() const noexcept
 {
-    other.op = nullptr;
-}
-
-PaOperation::~PaOperation()
-{
-    if(op)
-    {
-        pa_operation_unref (op);
-    }
-}
-
-PaOperation::operator bool() const
-{
-    return op != nullptr;
-}
-PaOperation& PaOperation::operator= (PaOperation&& other)
-{
-    std::swap (op, other.op);
-    return *this;
-}
-
-PaOperation& PaOperation::operator= (pa_operation* op)
-{
-    if(this->op != op)
-    {
-        if(this->op)
-        {
-            pa_operation_unref (this->op);
-            this->op = nullptr;
-        }
-        this->op = op;
-    }
-    return *this;
+    return op?true:false;
 }
