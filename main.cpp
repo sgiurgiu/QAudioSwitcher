@@ -15,14 +15,15 @@ int main(int argc, char *argv[])
 
 
     if (!QDBusConnection::sessionBus().registerService(SERVICE_NAME)) {
-        QMessageBox dialog;
-        dialog.critical(NULL,"Error","DBus register error: "+QDBusConnection::sessionBus().lastError().message());
+        //QMessageBox dialog;
+        //dialog.critical(NULL,"Error","DBus register error: "+QDBusConnection::sessionBus().lastError().message());
         return 1;
     }
 
     QAudioSwitcher w;
     //ExportScriptableSlots
     QDBusConnection::sessionBus().registerObject("/", &w, QDBusConnection::ExportScriptableSlots);
+
 
 
     w.hide();

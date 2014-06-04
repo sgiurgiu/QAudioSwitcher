@@ -1,5 +1,6 @@
 #include "pulseaudiosinksmanager.h"
 #include "qaudioswitcher.h"
+#include "paoperation.h"
 #include <pulse/pulseaudio.h>
 #include <pulse/ext-stream-restore.h>
 #include <QObject>
@@ -39,8 +40,6 @@ void PulseAudioSinksManager::retrieveSinks()
 void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_context *c, const pa_ext_stream_restore_info  *info,
                                      int eol, void *userdata) {
     pa_ext_stream_restore_info new_info;
-    pa_operation *o;
-
     PulseAudioSinksManager* sinksManager = (PulseAudioSinksManager*)userdata;
     if (eol) return;
 
@@ -51,10 +50,9 @@ void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_con
     std::string device = sinksManager->defaultDevice.toStdString();
     new_info.device = device.c_str();
 
-    o = pa_ext_stream_restore_write (sinksManager->pa_ctx,PA_UPDATE_REPLACE,
-                                     &new_info, 1,TRUE, NULL, NULL);
-
-    if (o == NULL) {
+    PaOperation op(pa_ext_stream_restore_write (sinksManager->pa_ctx,PA_UPDATE_REPLACE,
+                                     &new_info, 1,TRUE, NULL, NULL));
+    if (!op) {
             //g_warning ("pa_ext_stream_restore_write() failed: %s",
               //         pa_strerror (pa_context_errno (control->priv->pa_context)));
             return;
@@ -62,29 +60,26 @@ void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_con
 
     //g_debug ("Changed default device for %s to %s", info->name, info->device);
 
-    pa_operation_unref (o);
 }
 
 void PulseAudioSinksManager::setDefaultSink(const QString& name)
 {
-    pa_operation *pa_op;
+
     defaultDevice = name;
     std::string std_name = defaultDevice.toStdString();
     qDebug() << "setting sink to "<<name<<", and from std_String to  "<<std_name.c_str();
 
-    pa_op = pa_context_set_default_sink (pa_ctx,std_name.c_str(),NULL,NULL);
-    if (pa_op == NULL) {
+    PaOperation op(pa_context_set_default_sink (pa_ctx,std_name.c_str(),NULL,NULL));
+    if (!op) {
             //g_warning ("pa_context_set_default_sink() failed: %s",
             //         pa_strerror (pa_context_errno (control->priv->pa_context)));
             return;
     }
-    pa_op = pa_ext_stream_restore_read (pa_ctx, PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback,
+    op = pa_ext_stream_restore_read (pa_ctx, PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback,
                                     this);
-
-    if (pa_op == NULL) {
+    if (!op) {
         return;
-    }
-    pa_operation_unref (pa_op);
+    }    
 }
 
 void PulseAudioSinksManager::pulseAudioStateCallback(pa_context *ctx, void *userdata)
@@ -127,7 +122,6 @@ void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, con
 
 void PulseAudioSinksManager::retrieveSinksInfo()
 {
-    pa_operation *pa_op;
-    pa_op = pa_context_get_sink_info_list(pa_ctx,PulseAudioSinksManager::pulseAudioSinklistCallback,this);
-    pa_operation_unref (pa_op);
+    PaOperation op;
+    op=pa_context_get_sink_info_list(pa_ctx,PulseAudioSinksManager::pulseAudioSinklistCallback,this);
 }

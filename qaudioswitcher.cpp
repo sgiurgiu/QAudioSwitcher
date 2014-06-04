@@ -9,6 +9,10 @@
 #include "ui_qaudioswitcher.h"
 #include "pulseaudiosinksmanager.h"
 
+//yepee...global variables ('cmon we're a 100 line program, we can take it)
+const QDir propertiesDirectory(QDir::home().path()+QDir::separator()+".qaudioswitcher");
+QFile selectedSinksFile(propertiesDirectory.filePath("sinks"));
+QFile defaultSinkFile(propertiesDirectory.filePath("default_sink"));
 
 QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     QMainWindow(parent),
@@ -24,7 +28,7 @@ QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     this->move(QApplication::desktop()->availableGeometry().center() - this->rect().center());
     QDir::home().mkdir(".qaudioswitcher");
     setupTrayIcon();
-    sinksManager->retrieveSinks();    
+    sinksManager->retrieveSinks();
 }
 
 QAudioSwitcher::~QAudioSwitcher()
@@ -40,7 +44,7 @@ void QAudioSwitcher::setupTrayIcon()
     trayIconMenu->addAction(ui->action_Quit);
 
 
-    QIcon icon("/usr/share/cinnamon-control-center/icons/hicolor/48x48/devices/audio-speaker-center.svg");
+    QIcon icon("/usr/share/icons/oxygen/16x16/devices/audio-headset.png");
     trayIcon = new QSystemTrayIcon(icon, this);
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->show();
@@ -124,10 +128,8 @@ void QAudioSwitcher::switchSink()
 //we can afford to do this since we won't have too many
 void QAudioSwitcher::saveSinksList()
 {
-    QDir propDir(QDir::home().path()+QDir::separator()+".qaudioswitcher");
-    QFile propFile(propDir.filePath("sinks"));
-    propFile.open(QIODevice::WriteOnly);
-    QTextStream propFileStream(&propFile);
+    selectedSinksFile.open(QIODevice::WriteOnly);
+    QTextStream propFileStream(&selectedSinksFile);
     int itemCount = ui->listWidget->count();
     for(int i=0;i<itemCount; ++i) {
         PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(ui->listWidget->item(i));
@@ -138,16 +140,15 @@ void QAudioSwitcher::saveSinksList()
             propFileStream << sinkItem->getSink().getName() << "\r\n";
         }
     }
-    propFile.close();
+    selectedSinksFile.close();
 }
 
 void QAudioSwitcher::loadSinksList()
-{
-    QDir propDir(QDir::home().path()+QDir::separator()+".qaudioswitcher");
-    QFile propFile(propDir.filePath("sinks"));
-    if(propFile.exists()) {
-        propFile.open(QIODevice::ReadOnly);
-        QTextStream propFileStream(&propFile);
+{    
+
+    if(selectedSinksFile.exists()) {
+        selectedSinksFile.open(QIODevice::ReadOnly);
+        QTextStream propFileStream(&selectedSinksFile);
         QString line;
         while(!propFileStream.atEnd() && !(line = propFileStream.readLine()).isNull()) {
             int itemCount = ui->listWidget->count();
@@ -165,19 +166,17 @@ void QAudioSwitcher::loadSinksList()
             }
         }
     } else {
-        propFile.open(QIODevice::WriteOnly);
+        selectedSinksFile.open(QIODevice::WriteOnly);
         show();
     }
-    propFile.close();
+    selectedSinksFile.close();
 }
 
 void QAudioSwitcher::loadDefaultSink()
 {
-    QDir propDir(QDir::home().path()+QDir::separator()+".qaudioswitcher");
-    QFile propFile(propDir.filePath("default_sink"));
-    if(propFile.exists()) {
-        propFile.open(QIODevice::ReadOnly);
-        QTextStream propFileStream(&propFile);
+    if(defaultSinkFile.exists()) {
+        defaultSinkFile.open(QIODevice::ReadOnly);
+        QTextStream propFileStream(&defaultSinkFile);
         QString line;
         while(!propFileStream.atEnd() && !(line = propFileStream.readLine()).isNull()) {
             int itemCount = ui->listWidget->count();
@@ -191,21 +190,19 @@ void QAudioSwitcher::loadDefaultSink()
                     QFont font = sinkItem->font();
                     font.setBold(true);
                     sinkItem->setFont(font);
+                    sinksManager->setDefaultSink(currentDefaultSink);
                 }
             }
         }
-        propFile.close();
+        defaultSinkFile.close();
     }
 }
 
 void QAudioSwitcher::saveDefaultSink()
 {
-    QDir propDir(QDir::home().path()+QDir::separator()+".qaudioswitcher");
-    QFile propFile(propDir.filePath("default_sink"));
-    propFile.open(QIODevice::WriteOnly);
-    QTextStream propFileStream(&propFile);
+    defaultSinkFile.open(QIODevice::WriteOnly);
+    QTextStream propFileStream(&defaultSinkFile);
     propFileStream << currentDefaultSink << "\r\n";
-    propFile.close();
-
+    defaultSinkFile.close();
 }
 

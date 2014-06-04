@@ -13,15 +13,19 @@ TEMPLATE = app
 
 SOURCES += main.cpp qaudioswitcher.cpp pulseaudiosinksmanager.cpp \
     pulseaudiosink.cpp \
-    pulseaudiosinklistwidgetitem.cpp
+    pulseaudiosinklistwidgetitem.cpp \
+    paoperation.cpp
 
 HEADERS  += pulseaudiosinksmanager.h qaudioswitcher.h \
     pulseaudiosink.h \
-    pulseaudiosinklistwidgetitem.h
+    pulseaudiosinklistwidgetitem.h \
+    paoperation.h
 
 FORMS    += qaudioswitcher.ui
 
 CONFIG += qdbus
+
+QMAKE_CXXFLAGS += -std=c++11 -Wall
 
 unix: CONFIG += link_pkgconfig
 unix: PKGCONFIG += libpulse
