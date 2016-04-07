@@ -56,7 +56,7 @@ void PulseAudioSinksManager::pulseAudioMixerControlStreamRestoreCallback (pa_con
     new_info.device = device.c_str();
 
     PaOperation op(pa_ext_stream_restore_write (ctx,PA_UPDATE_REPLACE,
-                                     &new_info, 1,TRUE, NULL, NULL));
+                                     &new_info, 1,1, NULL, NULL));
     if (!op) {
             //g_warning ("pa_ext_stream_restore_write() failed: %s",
               //         pa_strerror (pa_context_errno (control->priv->pa_context)));
@@ -114,15 +114,29 @@ void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, con
     PulseAudioSinksManager* sinksManager = (PulseAudioSinksManager*)userdata;
     // If eol is set to a positive number, you're at the end of the list
     if (eol == 0) {
-        char description[512]={0};
-        char name[512]={0};
-        strncpy(description, info->description, 511);
-        strncpy(name, info->name, 511);        
-        PulseAudioSink sink(name,description);
+        PulseAudioSink sink(info->name,info->description, sinksManager->getPulseAudioIconName(info->proplist).c_str());
         sinksManager->signalAddDevice(sink);
     } else {
         sinksManager->signalSinkListComplete();
     }
+}
+
+std::string PulseAudioSinksManager::getPulseAudioIconName(pa_proplist *properties)
+{
+    const char* name;
+    if((name=pa_proplist_gets(properties,PA_PROP_DEVICE_ICON_NAME))) {
+        return std::string(name);
+    }
+    if((name=pa_proplist_gets(properties,PA_PROP_MEDIA_ICON_NAME))) {
+        return std::string(name);
+    }
+    if((name=pa_proplist_gets(properties,PA_PROP_WINDOW_ICON_NAME))) {
+        return std::string(name);
+    }
+    if((name=pa_proplist_gets(properties,PA_PROP_APPLICATION_ICON_NAME))) {
+        return std::string(name);
+    }
+    return "";
 }
 
 void PulseAudioSinksManager::retrieveSinksInfo()

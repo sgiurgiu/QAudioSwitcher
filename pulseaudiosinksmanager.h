@@ -10,6 +10,7 @@ struct pa_context;
 struct pa_threaded_mainloop;
 struct pa_sink_info;
 struct pa_ext_stream_restore_info;
+struct pa_proplist;
 
 class PulseAudioSinksManager : public QObject
 {
@@ -29,6 +30,7 @@ class PulseAudioSinksManager : public QObject
         void retrieveSinksInfo();
         static void pulseAudioMixerControlStreamRestoreCallback (pa_context *c, const pa_ext_stream_restore_info *info,
                                                                  int eol, void *userdata);
+        std::string getPulseAudioIconName(pa_proplist* properties);
     private:
         QAudioSwitcher* appWindow;
         QString defaultDevice;

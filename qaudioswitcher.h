@@ -25,6 +25,7 @@ class QAudioSwitcher : public QMainWindow
         void sinkListComplete();
         void sinkSelectionChanged(QListWidgetItem* item);
         Q_SCRIPTABLE void switchSink();
+        void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
     private:
         void saveSinksList();
         void loadSinksList();

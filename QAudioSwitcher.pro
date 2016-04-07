@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui dbus widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = QAudioSwitcher
 TEMPLATE = app
@@ -22,8 +22,6 @@ HEADERS  += pulseaudiosinksmanager.h qaudioswitcher.h \
     paoperation.h
 
 FORMS    += qaudioswitcher.ui
-
-CONFIG += qdbus
 
 QMAKE_CXXFLAGS += -std=c++11 -Wall
 

@@ -42,12 +42,20 @@ void QAudioSwitcher::setupTrayIcon()
     trayIconMenu = new QMenu(this);
     trayIconMenu->addAction(ui->action_Show);
     trayIconMenu->addAction(ui->action_Quit);
-
-
-    QIcon icon("/usr/share/icons/oxygen/16x16/devices/audio-headset.png");
-    trayIcon = new QSystemTrayIcon(icon, this);
+    trayIcon = new QSystemTrayIcon(this);
+    QObject::connect(trayIcon,SIGNAL(activated(QSystemTrayIcon::ActivationReason)),this, SLOT(trayIconActivated(QSystemTrayIcon::ActivationReason)));
     trayIcon->setContextMenu(trayIconMenu);
     trayIcon->show();
+}
+void QAudioSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    if(reason == QSystemTrayIcon::DoubleClick) {
+        if(this->isHidden()) {
+            ui->action_Show->activate(QAction::Trigger);
+        } else {
+            ui->action_Hide->activate(QAction::Trigger);
+        }
+    }
 }
 
 void QAudioSwitcher::showError(QString message)
@@ -115,6 +123,13 @@ void QAudioSwitcher::switchSink()
             QFont font = sinkItem->font();
             font.setBold(true);
             sinkItem->setFont(font);
+            if(QSystemTrayIcon::supportsMessages()) {
+                trayIcon->showMessage("Output Changed",sinkItem->getSink().getDescription());
+            }            
+            trayIcon->setIcon(sinkItem->icon());
+            if(!trayIcon->isVisible()) {
+                trayIcon->show();
+            }
         } else {
             QFont font = sinkItem->font();
             font.setBold(false);
@@ -190,6 +205,10 @@ void QAudioSwitcher::loadDefaultSink()
                     QFont font = sinkItem->font();
                     font.setBold(true);
                     sinkItem->setFont(font);
+                    trayIcon->setIcon(sinkItem->icon());
+                    if(!trayIcon->isVisible()) {
+                        trayIcon->show();
+                    }
                     sinksManager->setDefaultSink(currentDefaultSink);
                 }
             }

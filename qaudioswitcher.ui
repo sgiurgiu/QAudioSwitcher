@@ -73,12 +73,12 @@
      <x>0</x>
      <y>0</y>
      <width>421</width>
-     <height>22</height>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Fi&amp;le</string>
     </property>
     <addaction name="action_Quit"/>
    </widget>
@@ -117,7 +117,7 @@
  <connections>
   <connection>
    <sender>action_Quit</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>QAudioSwitcher</receiver>
    <slot>close()</slot>
    <hints>
@@ -133,7 +133,7 @@
   </connection>
   <connection>
    <sender>action_Hide</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>QAudioSwitcher</receiver>
    <slot>hide()</slot>
    <hints>
@@ -149,7 +149,7 @@
   </connection>
   <connection>
    <sender>action_Show</sender>
-   <signal>activated()</signal>
+   <signal>triggered()</signal>
    <receiver>QAudioSwitcher</receiver>
    <slot>show()</slot>
    <hints>
