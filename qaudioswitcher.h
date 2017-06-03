@@ -20,6 +20,7 @@ class QAudioSwitcher : public QMainWindow
         explicit QAudioSwitcher(QWidget *parent = 0);
         ~QAudioSwitcher();
     public slots:
+        void quit();
         void showError(QString message);
         void addDevice(PulseAudioSink sink);
         void sinkListComplete();

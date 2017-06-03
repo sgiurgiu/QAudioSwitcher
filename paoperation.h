@@ -2,6 +2,8 @@
 #define PAOPERATION_H
 
 #include <memory>
+#include <functional>
+
 struct pa_operation;
 class PaOperation
 {

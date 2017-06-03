@@ -118,24 +118,8 @@
   <connection>
    <sender>action_Quit</sender>
    <signal>triggered()</signal>
-   <receiver>QAudioSwitcher</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>304</x>
-     <y>167</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>action_Hide</sender>
-   <signal>triggered()</signal>
-   <receiver>QAudioSwitcher</receiver>
-   <slot>hide()</slot>
+   <receiver>action_Quit</receiver>
+   <slot>trigger()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -176,6 +160,22 @@
     <hint type="destinationlabel">
      <x>-1</x>
      <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>action_Hide</sender>
+   <signal>triggered()</signal>
+   <receiver>QAudioSwitcher</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>143</y>
     </hint>
    </hints>
   </connection>

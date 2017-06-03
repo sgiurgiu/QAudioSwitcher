@@ -23,8 +23,13 @@ QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     ui->centralWidget->setLayout(ui->verticalLayout);
 
 //    QObject::connect(ui->hideButton,SIGNAL(clicked()),ui->action_Hide, SLOT(trigger()));
-    QObject::connect(ui->listWidget,SIGNAL(itemChanged(QListWidgetItem*)),this, SLOT(sinkSelectionChanged(QListWidgetItem*)));
-    QObject::connect(ui->switchButton,SIGNAL(clicked()),this, SLOT(switchSink()));
+    connect(ui->listWidget,SIGNAL(itemChanged(QListWidgetItem*)),this, SLOT(sinkSelectionChanged(QListWidgetItem*)));
+    connect(ui->switchButton,SIGNAL(clicked()),this, SLOT(switchSink()));
+    connect(sinksManager, SIGNAL(signalError(const QString)),this, SLOT(showError(const QString)));
+    connect(sinksManager, SIGNAL(signalAddDevice(PulseAudioSink)),this, SLOT(addDevice(PulseAudioSink)));
+    connect(sinksManager, SIGNAL(signalSinkListComplete()),this, SLOT(sinkListComplete()));
+    connect(ui->action_Quit,SIGNAL(triggered()),this,SLOT(quit()));
+    
     this->move(QApplication::desktop()->availableGeometry().center() - this->rect().center());
     QDir::home().mkdir(".qaudioswitcher");
     setupTrayIcon();
@@ -56,6 +61,11 @@ void QAudioSwitcher::trayIconActivated(QSystemTrayIcon::ActivationReason reason)
             ui->action_Hide->activate(QAction::Trigger);
         }
     }
+}
+
+void QAudioSwitcher::quit()
+{
+    QApplication::exit(0);
 }
 
 void QAudioSwitcher::showError(QString message)

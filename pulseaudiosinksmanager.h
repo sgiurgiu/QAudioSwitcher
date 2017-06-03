@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <memory>
+#include <functional>
 #include "pulseaudiosink.h"
 
 class QAudioSwitcher;
@@ -16,7 +17,7 @@ class PulseAudioSinksManager : public QObject
 {
     Q_OBJECT
     public:
-        PulseAudioSinksManager(QAudioSwitcher* appWindow);
+        PulseAudioSinksManager(QObject* parent = 0);
         ~PulseAudioSinksManager();
         void retrieveSinks();
         void setDefaultSink(const QString &name);
@@ -28,11 +29,13 @@ class PulseAudioSinksManager : public QObject
         static void pulseAudioStateCallback(pa_context *ctx, void *userdata);
         static void pulseAudioSinklistCallback(pa_context *ctx, const pa_sink_info *info, int eol, void *userdata);
         void retrieveSinksInfo();
-        static void pulseAudioMixerControlStreamRestoreCallback (pa_context *c, const pa_ext_stream_restore_info *info,
-                                                                 int eol, void *userdata);
+        static void pulseAudioMixerControlStreamRestoreCallback (pa_context *c, const pa_ext_stream_restore_info *info,int eol, void *userdata);
         std::string getPulseAudioIconName(pa_proplist* properties);
-    private:
-        QAudioSwitcher* appWindow;
+        void emitSignalError(const QString message);
+        void emitSignalAddDevice(PulseAudioSink sink);
+        void emitSignalSinkListComplete();
+        
+    private:        
         QString defaultDevice;
 
         std::unique_ptr<pa_threaded_mainloop ,std::function<void(pa_threaded_mainloop*)>> pa_ml;

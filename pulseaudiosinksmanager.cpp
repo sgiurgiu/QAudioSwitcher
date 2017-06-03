@@ -14,16 +14,10 @@ auto loop_deleter = [](pa_threaded_mainloop* loop){
     pa_threaded_mainloop_free(loop);
 };
 
-PulseAudioSinksManager::PulseAudioSinksManager(QAudioSwitcher* appWindow):
-    appWindow(appWindow),pa_ml(nullptr,loop_deleter),pa_ctx(nullptr,context_deleter)
+PulseAudioSinksManager::PulseAudioSinksManager(QObject *parent):QObject(parent),
+    pa_ml(nullptr,loop_deleter),pa_ctx(nullptr,context_deleter)
 {
-    qRegisterMetaType<PulseAudioSink>("PulseAudioSink");
-    QObject::connect(this, SIGNAL(signalError(const QString)),
-                          appWindow, SLOT(showError(const QString)));
-    QObject::connect(this, SIGNAL(signalAddDevice(PulseAudioSink)),
-                          appWindow, SLOT(addDevice(PulseAudioSink)));
-    QObject::connect(this, SIGNAL(signalSinkListComplete()),
-                          appWindow, SLOT(sinkListComplete()));
+   qRegisterMetaType<PulseAudioSink>("PulseAudioSink");
 }
 
 PulseAudioSinksManager::~PulseAudioSinksManager()
@@ -101,12 +95,27 @@ void PulseAudioSinksManager::pulseAudioStateCallback(pa_context *ctx, void *user
     default:
         break;
     case PA_CONTEXT_FAILED:
-        sinksManager->signalError("Cannot connect to pulse audio");
+        sinksManager->emitSignalError("Cannot connect to pulse audio");
         break;
     case PA_CONTEXT_READY:
         sinksManager->retrieveSinksInfo();
         break;
     }
+}
+
+void PulseAudioSinksManager::emitSignalError(const QString message) 
+{
+    emit signalError(message);
+}
+
+void PulseAudioSinksManager::emitSignalAddDevice(PulseAudioSink sink)
+{
+    emit signalAddDevice(sink);
+}
+
+void PulseAudioSinksManager::emitSignalSinkListComplete()
+{
+    emit signalSinkListComplete();
 }
 
 void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, const pa_sink_info *info, int eol, void *userdata)
@@ -115,9 +124,9 @@ void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, con
     // If eol is set to a positive number, you're at the end of the list
     if (eol == 0) {
         PulseAudioSink sink(info->name,info->description, sinksManager->getPulseAudioIconName(info->proplist).c_str());
-        sinksManager->signalAddDevice(sink);
+        sinksManager->emitSignalAddDevice(sink);
     } else {
-        sinksManager->signalSinkListComplete();
+        sinksManager->emitSignalSinkListComplete();
     }
 }
 

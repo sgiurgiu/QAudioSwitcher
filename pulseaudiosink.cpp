@@ -6,7 +6,8 @@ PulseAudioSink::PulseAudioSink():name(""),description(""),iconName("")
 }
 
 PulseAudioSink::PulseAudioSink(const QString &name, const QString &desc,
-                               const QString &iconName):name(name),description(desc),iconName(iconName)
+                               const QString &iconName)
+    :name(name),description(desc),iconName(iconName)
 {
 
 }

@@ -1,5 +1,6 @@
 #ifndef PULSEAUDIOSINK_H
 #define PULSEAUDIOSINK_H
+#include <QObject>
 #include <QString>
 
 class PulseAudioSink
