@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QDir>
 #include <QFile>
+#include <QScreen>
 
 #include "ui_qaudioswitcher.h"
 #include "pulseaudiosinksmanager.h"
@@ -29,8 +30,11 @@ QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     connect(sinksManager, SIGNAL(signalAddDevice(PulseAudioSink)),this, SLOT(addDevice(PulseAudioSink)));
     connect(sinksManager, SIGNAL(signalSinkListComplete()),this, SLOT(sinkListComplete()));
     connect(ui->action_Quit,SIGNAL(triggered()),this,SLOT(quit()));
-    
-    this->move(QApplication::desktop()->availableGeometry().center() - this->rect().center());
+    auto screen = QGuiApplication::primaryScreen();
+    if(screen)
+    {
+        this->move(screen->availableGeometry().center() - this->rect().center());
+    }
     QDir::home().mkdir(".qaudioswitcher");
     setupTrayIcon();
     sinksManager->retrieveSinks();
