@@ -8,16 +8,20 @@
 #include <QScreen>
 
 #include "ui_qaudioswitcher.h"
-#include "pulseaudiosinksmanager.h"
+#include "audiomanagerfactory.h"
+#include "audiomanager.h"
 
-//yepee...global variables ('cmon we're a 100 line program, we can take it)
-const QDir propertiesDirectory(QDir::home().path()+QDir::separator()+".qaudioswitcher");
-QFile selectedSinksFile(propertiesDirectory.filePath("sinks"));
-QFile defaultSinkFile(propertiesDirectory.filePath("default_sink"));
+#include "devicelistwidgetitem.h"
 
+namespace
+{
+    const QDir  propertiesDirectory(QDir::home().path()+QDir::separator()+".qaudioswitcher");
+    const QString selectedSinksFilePath(propertiesDirectory.filePath("sinks"));
+    const QString defaultSinkFilePath(propertiesDirectory.filePath("default_sink"));
+}
 QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::QAudioSwitcher),sinksManager(new PulseAudioSinksManager(this)),
+    ui(new Ui::QAudioSwitcher),audioManager(AudioManagerFactory::CreateAudioManager(this)),
     sinkListLoadingComplete(false),currentDefaultSink("")
 {
     ui->setupUi(this);
@@ -26,9 +30,9 @@ QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
 //    QObject::connect(ui->hideButton,SIGNAL(clicked()),ui->action_Hide, SLOT(trigger()));
     connect(ui->listWidget,SIGNAL(itemChanged(QListWidgetItem*)),this, SLOT(sinkSelectionChanged(QListWidgetItem*)));
     connect(ui->switchButton,SIGNAL(clicked()),this, SLOT(switchSink()));
-    connect(sinksManager, SIGNAL(signalError(const QString)),this, SLOT(showError(const QString)));
-    connect(sinksManager, SIGNAL(signalAddDevice(PulseAudioSink)),this, SLOT(addDevice(PulseAudioSink)));
-    connect(sinksManager, SIGNAL(signalSinkListComplete()),this, SLOT(sinkListComplete()));
+    connect(audioManager, SIGNAL(signalError(const QString)),this, SLOT(showError(const QString)));
+    connect(audioManager, SIGNAL(signalAddDevice(AudioDevice)),this, SLOT(addDevice(AudioDevice)));
+    connect(audioManager, SIGNAL(signalSinkListComplete()),this, SLOT(sinkListComplete()));
     connect(ui->action_Quit,SIGNAL(triggered()),this,SLOT(quit()));
     auto screen = QGuiApplication::primaryScreen();
     if(screen)
@@ -37,13 +41,13 @@ QAudioSwitcher::QAudioSwitcher(QWidget *parent) :
     }
     QDir::home().mkdir(".qaudioswitcher");
     setupTrayIcon();
-    sinksManager->retrieveSinks();
+    audioManager->retrieveSinks();
 }
 
 QAudioSwitcher::~QAudioSwitcher()
 {
     delete ui;
-    delete sinksManager;
+    delete audioManager;
 }
 
 void QAudioSwitcher::setupTrayIcon()
@@ -78,9 +82,9 @@ void QAudioSwitcher::showError(QString message)
     dialog.critical(this,"Error",message);
 }
 
-void QAudioSwitcher::addDevice(PulseAudioSink sink)
+void QAudioSwitcher::addDevice(AudioDevice sink)
 {    
-    PulseAudioSinkListWidgetItem* item=new PulseAudioSinkListWidgetItem(sink,ui->listWidget);
+    DeviceListWidgetItem* item=new DeviceListWidgetItem(std::move(sink),ui->listWidget);
     item->setCheckState(Qt::Unchecked);
     ui->listWidget->addItem(item);
 }
@@ -95,11 +99,11 @@ void QAudioSwitcher::sinkListComplete()
 void QAudioSwitcher::sinkSelectionChanged(QListWidgetItem *item)
 {
     if(!sinkListLoadingComplete) return;
-    PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(item);
+    DeviceListWidgetItem* sinkItem = dynamic_cast<DeviceListWidgetItem*>(item);
     if(!sinkItem) {
         return;
     }
-    qDebug()<< "Item selection changed "<<sinkItem->getSink().getDescription()<<", with check state "<<sinkItem->checkState();
+    qDebug()<< "Item selection changed "<<sinkItem->getDevice().getDescription()<<", with check state "<<sinkItem->checkState();
     saveSinksList();
 }
 
@@ -110,12 +114,12 @@ void QAudioSwitcher::switchSink()
     int itemCount = ui->listWidget->count();
     QList<QString> defaultSinksToUse;
     for(int i=0;i<itemCount;++i) {
-        PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(ui->listWidget->item(i));
+        DeviceListWidgetItem* sinkItem = dynamic_cast<DeviceListWidgetItem*>(ui->listWidget->item(i));
         if(!sinkItem) {
             continue;
         }
         if(sinkItem->checkState() == Qt::Checked) {
-            defaultSinksToUse.append(sinkItem->getSink().getName());
+            defaultSinksToUse.append(sinkItem->getDevice().getName());
         }
     }
     int index = defaultSinksToUse.indexOf(currentDefaultSink);
@@ -125,20 +129,20 @@ void QAudioSwitcher::switchSink()
     }
     if(defaultSinksToUse.size() > 0) {
         currentDefaultSink = defaultSinksToUse.at(index);
-        sinksManager->setDefaultSink(currentDefaultSink);
+        audioManager->setDefaultSink(currentDefaultSink);
         saveDefaultSink();
     }    
     for(int i=0;i<itemCount;++i) {
-        PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(ui->listWidget->item(i));
+        DeviceListWidgetItem* sinkItem = dynamic_cast<DeviceListWidgetItem*>(ui->listWidget->item(i));
         if(!sinkItem) {
             continue;
         }
-        if(sinkItem->getSink().getName() == currentDefaultSink) {
+        if(sinkItem->getDevice().getName() == currentDefaultSink) {
             QFont font = sinkItem->font();
             font.setBold(true);
             sinkItem->setFont(font);
             if(QSystemTrayIcon::supportsMessages()) {
-                trayIcon->showMessage("Output Changed",sinkItem->getSink().getDescription());
+                trayIcon->showMessage("Output Changed",sinkItem->getDevice().getDescription());
             }            
             trayIcon->setIcon(sinkItem->icon());
             if(!trayIcon->isVisible()) {
@@ -157,36 +161,39 @@ void QAudioSwitcher::switchSink()
 //we can afford to do this since we won't have too many
 void QAudioSwitcher::saveSinksList()
 {
-    selectedSinksFile.open(QIODevice::WriteOnly);
-    QTextStream propFileStream(&selectedSinksFile);
-    int itemCount = ui->listWidget->count();
-    for(int i=0;i<itemCount; ++i) {
-        PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(ui->listWidget->item(i));
-        if(!sinkItem) {
-            continue;
-        }
-        if(sinkItem->checkState() == Qt::Checked) {
-            propFileStream << sinkItem->getSink().getName() << "\r\n";
+    QFile selectedSinksFile(selectedSinksFilePath);
+
+    if(selectedSinksFile.open(QIODevice::WriteOnly))
+    {
+        QTextStream propFileStream(&selectedSinksFile);
+        int itemCount = ui->listWidget->count();
+        for(int i=0;i<itemCount; ++i) {
+            DeviceListWidgetItem* sinkItem = dynamic_cast<DeviceListWidgetItem*>(ui->listWidget->item(i));
+            if(!sinkItem) {
+                continue;
+            }
+            if(sinkItem->checkState() == Qt::Checked) {
+                propFileStream << sinkItem->getDevice().getName() << "\r\n";
+            }
         }
     }
-    selectedSinksFile.close();
 }
 
 void QAudioSwitcher::loadSinksList()
 {    
-
-    if(selectedSinksFile.exists()) {
-        selectedSinksFile.open(QIODevice::ReadOnly);
+    QFile selectedSinksFile(selectedSinksFilePath);
+    if(selectedSinksFile.exists() && selectedSinksFile.open(QIODevice::ReadOnly))
+    {
         QTextStream propFileStream(&selectedSinksFile);
         QString line;
         while(!propFileStream.atEnd() && !(line = propFileStream.readLine()).isNull()) {
             int itemCount = ui->listWidget->count();
             for(int i=0;i<itemCount;++i) {
-                PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(ui->listWidget->item(i));
+                DeviceListWidgetItem* sinkItem = dynamic_cast<DeviceListWidgetItem*>(ui->listWidget->item(i));
                 if(!sinkItem) {
                     continue;
                 }
-                if(sinkItem->getSink().getName() == line) {
+                if(sinkItem->getDevice().getName() == line) {
                     sinkItem->setCheckState(Qt::Checked);
                     if(currentDefaultSink.isNull() || currentDefaultSink.isEmpty() ) {
                         currentDefaultSink = line;
@@ -198,23 +205,24 @@ void QAudioSwitcher::loadSinksList()
         selectedSinksFile.open(QIODevice::WriteOnly);
         show();
     }
-    selectedSinksFile.close();
 }
 
 void QAudioSwitcher::loadDefaultSink()
 {
-    if(defaultSinkFile.exists()) {
-        defaultSinkFile.open(QIODevice::ReadOnly);
+    QFile defaultSinkFile(defaultSinkFilePath);
+
+    if(defaultSinkFile.exists() && defaultSinkFile.open(QIODevice::ReadOnly))
+    {
         QTextStream propFileStream(&defaultSinkFile);
         QString line;
         while(!propFileStream.atEnd() && !(line = propFileStream.readLine()).isNull()) {
             int itemCount = ui->listWidget->count();
             for(int i=0;i<itemCount;++i) {
-                PulseAudioSinkListWidgetItem* sinkItem = dynamic_cast<PulseAudioSinkListWidgetItem*>(ui->listWidget->item(i));
+                DeviceListWidgetItem* sinkItem = dynamic_cast<DeviceListWidgetItem*>(ui->listWidget->item(i));
                 if(!sinkItem) {
                     continue;
                 }
-                if(sinkItem->getSink().getName() == line) {
+                if(sinkItem->getDevice().getName() == line) {
                     currentDefaultSink = line;
                     QFont font = sinkItem->font();
                     font.setBold(true);
@@ -223,19 +231,20 @@ void QAudioSwitcher::loadDefaultSink()
                     if(!trayIcon->isVisible()) {
                         trayIcon->show();
                     }
-                    sinksManager->setDefaultSink(currentDefaultSink);
+                    audioManager->setDefaultSink(currentDefaultSink);
                 }
             }
         }
-        defaultSinkFile.close();
     }
 }
 
 void QAudioSwitcher::saveDefaultSink()
 {
-    defaultSinkFile.open(QIODevice::WriteOnly);
-    QTextStream propFileStream(&defaultSinkFile);
-    propFileStream << currentDefaultSink << "\r\n";
-    defaultSinkFile.close();
+    QFile defaultSinkFile(defaultSinkFilePath);
+    if(defaultSinkFile.open(QIODevice::WriteOnly))
+    {
+        QTextStream propFileStream(&defaultSinkFile);
+        propFileStream << currentDefaultSink << "\r\n";
+    }
 }
 

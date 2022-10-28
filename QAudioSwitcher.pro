@@ -11,19 +11,31 @@ greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 TARGET = QAudioSwitcher
 TEMPLATE = app
 
-SOURCES += main.cpp qaudioswitcher.cpp pulseaudiosinksmanager.cpp \
-    pulseaudiosink.cpp \
-    pulseaudiosinklistwidgetitem.cpp \
-    paoperation.cpp
+SOURCES += main.cpp qaudioswitcher.cpp \
+    audiodevice.cpp \
+    audiomanager.cpp \
+    audiomanagerfactory.cpp \
+    devicelistwidgetitem.cpp
 
-HEADERS  += pulseaudiosinksmanager.h qaudioswitcher.h \
-    pulseaudiosink.h \
-    pulseaudiosinklistwidgetitem.h \
-    paoperation.h
+HEADERS  += qaudioswitcher.h \
+    audiodevice.h \
+    audiomanager.h \
+    audiomanagerfactory.h \
+    devicelistwidgetitem.h
+
+CONFIG(PULSEAUDIO) {
+    SOURCES += pulseaudiosinksmanager.cpp  paoperation.cpp
+    HEADERS += pulseaudiosinksmanager.h paoperation.h
+    DEFINES += PULSEAUDIO
+    message("pulseaudio configured")
+}
 
 FORMS    += qaudioswitcher.ui
 
 QMAKE_CXXFLAGS += -std=c++11 -Wall
 
 unix: CONFIG += link_pkgconfig
-unix: PKGCONFIG += libpulse
+
+CONFIG(PULSEAUDIO) {
+    unix: PKGCONFIG += libpulse
+}

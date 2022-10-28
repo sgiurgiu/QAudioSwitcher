@@ -4,14 +4,21 @@
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QMenu>
+#include <QListWidgetItem>
 
-#include "pulseaudiosink.h"
-#include "pulseaudiosinklistwidgetitem.h"
+#include "audiodevice.h"
 
 namespace Ui {
     class QAudioSwitcher;
 }
-class PulseAudioSinksManager;
+#ifdef PULSEAUDIO
+//#define AudioManager PulseAudioSinksManager
+#else
+#error "AudioManager implementation not defined"
+#endif
+
+class AudioManager;
+
 class QAudioSwitcher : public QMainWindow
 {
         Q_OBJECT
@@ -22,7 +29,7 @@ class QAudioSwitcher : public QMainWindow
     public slots:
         void quit();
         void showError(QString message);
-        void addDevice(PulseAudioSink sink);
+        void addDevice(AudioDevice sink);
         void sinkListComplete();
         void sinkSelectionChanged(QListWidgetItem* item);
         Q_SCRIPTABLE void switchSink();
@@ -35,7 +42,7 @@ class QAudioSwitcher : public QMainWindow
         void setupTrayIcon();
     private:
         Ui::QAudioSwitcher *ui;
-        PulseAudioSinksManager *sinksManager;
+        AudioManager *audioManager;
         bool sinkListLoadingComplete;
         QString currentDefaultSink;
         QSystemTrayIcon* trayIcon;

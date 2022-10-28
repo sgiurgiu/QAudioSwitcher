@@ -14,10 +14,10 @@ auto loop_deleter = [](pa_threaded_mainloop* loop){
     pa_threaded_mainloop_free(loop);
 };
 
-PulseAudioSinksManager::PulseAudioSinksManager(QObject *parent):QObject(parent),
+PulseAudioSinksManager::PulseAudioSinksManager(QObject *parent):AudioManager(parent),
     pa_ml(nullptr,loop_deleter),pa_ctx(nullptr,context_deleter)
 {
-   qRegisterMetaType<PulseAudioSink>("PulseAudioSink");
+   qRegisterMetaType<AudioDevice>("AudioDevice");
 }
 
 PulseAudioSinksManager::~PulseAudioSinksManager()
@@ -108,7 +108,7 @@ void PulseAudioSinksManager::emitSignalError(const QString message)
     emit signalError(message);
 }
 
-void PulseAudioSinksManager::emitSignalAddDevice(PulseAudioSink sink)
+void PulseAudioSinksManager::emitSignalAddDevice(AudioDevice sink)
 {
     emit signalAddDevice(sink);
 }
@@ -123,7 +123,7 @@ void PulseAudioSinksManager::pulseAudioSinklistCallback(pa_context* /*ctx*/, con
     PulseAudioSinksManager* sinksManager = (PulseAudioSinksManager*)userdata;
     // If eol is set to a positive number, you're at the end of the list
     if (eol == 0) {
-        PulseAudioSink sink(info->name,info->description, sinksManager->getPulseAudioIconName(info->proplist).c_str());
+        AudioDevice sink(info->name,info->description, sinksManager->getPulseAudioIconName(info->proplist).c_str());
         sinksManager->emitSignalAddDevice(sink);
     } else {
         sinksManager->emitSignalSinkListComplete();

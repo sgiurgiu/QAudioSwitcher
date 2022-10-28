@@ -1,15 +1,15 @@
-#ifndef PULSEAUDIOSINK_H
-#define PULSEAUDIOSINK_H
+#ifndef AUDIODEVICE_H
+#define AUDIODEVICE_H
 #include <QObject>
 #include <QString>
 
-class PulseAudioSink
+class AudioDevice
 {
 
     public:
-        PulseAudioSink();
-        PulseAudioSink(const QString& name,const QString& desc, const QString& iconName);
-        ~PulseAudioSink(){ }
+        AudioDevice();
+        AudioDevice(const QString& name,const QString& desc, const QString& iconName);
+        ~AudioDevice(){ }
 
         void setName(const QString& name);
         void setDescription(const QString& desc);
